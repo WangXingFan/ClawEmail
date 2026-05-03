@@ -1,8 +1,11 @@
 services:
-  claw-email-webapp:
+  claw-email:
+    image: ghcr.io/wangxingfan/clawemail:latest
     build: .
-    container_name: claw-email-webapp
+    container_name: claw-email
     restart: unless-stopped
+    # Host port can be changed freely; container always listens on 3000.
+    # To run on a different host port, change the left side, e.g. "8080:3000".
     ports:
       - "3000:3000"
     env_file:

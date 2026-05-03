@@ -201,17 +201,20 @@ DATABASE_PATH=./data/app.db
 
 ## 8. 本地运行
 
+应用监听端口由 `PORT` 环境变量控制，默认 **3000**（host `0.0.0.0`）。
+
 ```powershell
 npm install
 npm run build
 npm start
-# http://localhost:3000
+# 默认 http://localhost:3000
+# 改端口： $env:PORT=8080; npm start
 ```
 
 开发：
 
 ```powershell
-npm run dev          # tsx 跑后端，监听 :3000
+npm run dev          # tsx 跑后端，监听 :3000（受 PORT 控制）
 npm run dev:web      # Vite 跑前端，监听 :5173
 npm run typecheck    # tsc --noEmit
 ```
@@ -220,21 +223,31 @@ npm run typecheck    # tsc --noEmit
 
 ## 9. Docker 部署
 
+容器内进程恒定监听 `3000`，宿主端口由 `ports` 左侧决定（默认 `3000:3000`）。
+
+### docker compose
+
 ```powershell
-docker compose up -d --build
-docker compose ps
+git clone https://github.com/WangXingFan/ClawEmail.git
+cd ClawEmail
+cp .env.example .env
+docker compose up -d
 curl http://localhost:3000/health
 ```
 
-`docker-compose.yml` 把 `./data` 挂到 `/app/data`，确保 SQLite 持久化。Dockerfile 使用 `node:22-bookworm-slim` 多阶段构建，需要 `python3 / make / g++` 来编译 `better-sqlite3` native binding。
+### docker run
 
-## 10. 安全边界
+```bash
+docker run -d --name clawemail \
+  -p 3000:3000 \
+  -e ADMIN_PASSWORD=change-me \
+  -v $PWD/data:/app/data \
+  ghcr.io/wangxingfan/clawemail:latest
+```
 
-- `ADMIN_PASSWORD` 是轻量密码门，不是用户体系；公网部署请放在 Cloudflare Access / Nginx 鉴权后。
-- `CLAW_API_KEY` 与 `CLAW_DASHBOARD_COOKIE` 仅存于服务端 SQLite 与 `.env`，**不会暴露到前端 bundle**；浏览器只持有 `ADMIN_PASSWORD`。
-- `?token=` 与 Header 等价，注意 SSE / 附件链接会出现在浏览器历史和服务器日志中。
-- Claw Dashboard `/api/v1/...` 是网页内部接口，路径或字段变化时需重新抓包并更新 `claw-dashboard.ts`。
-- 删除邮件依赖 SDK 的内部 `transport.moveMessages`；同步邮箱依赖 `transport.listMessages`。SDK 升级若隐藏这些字段，会得到 `Remote mail deletion is not supported by the installed Claw SDK` 这类错误，需要适配。
+`./data` 挂到 `/app/data` 持久化 SQLite。
+
+
 
 ## 致谢
 
