@@ -2,7 +2,7 @@ import { useState } from "react";
 import { deleteMail, replyMail, type MailDetail, type MailSummary } from "../api";
 import { useResizableWidth } from "../hooks";
 import { plural, usePrefs } from "../i18n";
-import { parseServerTime } from "../time";
+import { parseMailTime, parseServerTime } from "../time";
 
 type Props = {
   selectedMailbox: string;
@@ -16,9 +16,9 @@ type Props = {
   adminPassword: string;
 };
 
-function fmtTime(value: string | null): string {
+function fmtTime(value: string | null, source: "mail" | "db" = "db"): string {
   if (!value) return "—";
-  const date = parseServerTime(value);
+  const date = source === "mail" ? parseMailTime(value) : parseServerTime(value);
   if (Number.isNaN(date.getTime())) return value;
   const today = new Date();
   const sameDay = date.toDateString() === today.toDateString();
@@ -28,11 +28,17 @@ function fmtTime(value: string | null): string {
   return date.toLocaleDateString([], { month: "short", day: "2-digit" });
 }
 
-function fmtFull(value: string | null): string {
+function fmtFull(value: string | null, source: "mail" | "db" = "db"): string {
   if (!value) return "—";
-  const date = parseServerTime(value);
+  const date = source === "mail" ? parseMailTime(value) : parseServerTime(value);
   if (Number.isNaN(date.getTime())) return value;
   return date.toLocaleString();
+}
+
+function mailTime(mail: MailSummary | MailDetail): { value: string | null; source: "mail" | "db" } {
+  return mail.received_at
+    ? { value: mail.received_at, source: "mail" }
+    : { value: mail.created_at, source: "db" };
 }
 
 export function InboxView({
@@ -113,20 +119,23 @@ export function InboxView({
               {t("inbox.list.empty.body")}
             </div>
           )}
-          {mails.map((mail) => (
-            <button
-              key={mail.id}
-              className={`mail-row ${selectedMail?.id === mail.id ? "selected" : ""}`}
-              onClick={() => onSelectMail(mail.id)}
-            >
-              <span className="subj">{mail.subject || t("inbox.subject.empty")}</span>
-              <span className="time">{fmtTime(mail.received_at || mail.created_at)}</span>
-              <span className="meta">
-                <span className="from">{mail.source || t("inbox.unknownSender")}</span>
-                {mail.has_attachments ? <span className="att">◇</span> : null}
-              </span>
-            </button>
-          ))}
+          {mails.map((mail) => {
+            const time = mailTime(mail);
+            return (
+              <button
+                key={mail.id}
+                className={`mail-row ${selectedMail?.id === mail.id ? "selected" : ""}`}
+                onClick={() => onSelectMail(mail.id)}
+              >
+                <span className="subj">{mail.subject || t("inbox.subject.empty")}</span>
+                <span className="time">{fmtTime(time.value, time.source)}</span>
+                <span className="meta">
+                  <span className="from">{mail.source || t("inbox.unknownSender")}</span>
+                  {mail.has_attachments ? <span className="att">◇</span> : null}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -145,7 +154,9 @@ export function InboxView({
             <small>{t("inbox.empty.hint")}</small>
           </div>
         )}
-        {selectedMail && (
+        {selectedMail && (() => {
+          const time = mailTime(selectedMail);
+          return (
           <>
             <div className="detail-head">
               <div className="crumbs">
@@ -170,7 +181,7 @@ export function InboxView({
                 <dt>{t("inbox.detail.to")}</dt>
                 <dd className="mono">{selectedMail.address || selectedMail.mailbox_email}</dd>
                 <dt>{t("inbox.detail.at")}</dt>
-                <dd className="mono">{fmtFull(selectedMail.received_at || selectedMail.created_at)}</dd>
+                <dd className="mono">{fmtFull(time.value, time.source)}</dd>
               </dl>
             </div>
 
@@ -236,7 +247,8 @@ export function InboxView({
               </div>
             </div>
           </>
-        )}
+          );
+        })()}
       </section>
     </div>
   );
