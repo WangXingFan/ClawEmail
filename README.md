@@ -1,5 +1,7 @@
 # Claw Email Web Manager
 
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/WangXingFan/ClawEmail)
+
 基于 `claw.163.com` 的 **子邮箱批量管理 / 实时收发** 一体化前后端。
 通过 Web UI 验证码登录 Claw，自动派生 Dashboard Cookie 与 API Key，为每个子邮箱维持长连接监听，新邮件实时入库并经 SSE 推送给前端，可在线发件、回复、删除（远端 + 本地双删）、下载附件。
 
@@ -249,6 +251,57 @@ docker run -d --name clawemail \
 ```
 
 `./data` 挂到 `/app/data` 持久化 SQLite。
+
+## 10. Cloudflare 无服务器部署
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/WangXingFan/ClawEmail)
+
+本仓库同时提供 Cloudflare Workers + Static Assets + D1 的部署入口：
+
+```text
+src/cloudflare/          Cloudflare Worker API（无 Fastify / better-sqlite3 / Node SDK）
+migrations/0001_initial.sql
+wrangler.toml
+```
+
+限制边界：
+
+- Cloudflare 版不运行常驻邮箱 WebSocket 监听器；收件箱通过前端刷新或 `GET /api/mails?sync=true` 请求触发同步。
+- D1 替代本地 SQLite 文件；不需要自建服务器或挂载磁盘。
+- 附件仍然不入库，下载时从 Claw 远端按需转发。
+
+一键部署会跳转到 Cloudflare，由 Cloudflare 克隆仓库、创建 Workers Builds 项目，并按 `wrangler.toml` 自动准备 D1 绑定。部署过程中需要填写 `ADMIN_PASSWORD`。
+
+手动部署：
+
+```powershell
+npx wrangler login
+npx wrangler d1 create clawemail
+```
+
+把上一步输出的 `database_id` 写入 `wrangler.toml`：
+
+```toml
+[[d1_databases]]
+binding = "DB"
+database_name = "clawemail"
+database_id = "你的 D1 database_id"
+```
+
+设置管理密码并初始化 D1：
+
+```powershell
+npx wrangler secret put ADMIN_PASSWORD
+npm run cf:migrate
+```
+
+部署：
+
+```powershell
+npm run cf:deploy
+```
+
+Cloudflare 版入口与原 API 保持一致，前端仍调用同源 `/api/*`。如果需要回到原服务器版，继续使用 `npm run build && npm start` 或 Docker 部署即可。
 
 
 

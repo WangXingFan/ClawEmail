@@ -207,6 +207,7 @@ const EN: Dict = {
   "flash.claw.refreshed": "session refreshed · {n} mailboxes synced",
   "flash.claw.severed": "session severed",
   "flash.events.reconnecting": "realtime channel reconnecting…",
+  "flash.events.manualSync": "Cloudflare deployment uses manual inbox sync",
   "confirm.disconnect": "Disconnect from Claw?",
 
   // prefs
@@ -401,6 +402,7 @@ const ZH: Dict = {
   "flash.claw.refreshed": "连接已刷新 · 同步 {n} 个邮箱",
   "flash.claw.severed": "Claw 连接已断开",
   "flash.events.reconnecting": "实时连接断开，稍后会自动重连…",
+  "flash.events.manualSync": "Cloudflare 部署使用手动同步收件箱",
   "confirm.disconnect": "确认断开 Claw 连接？",
 
   "pref.theme.dark": "暗色",

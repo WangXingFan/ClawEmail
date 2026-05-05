@@ -7,8 +7,22 @@
     "dev": "tsx src/server/index.ts",
     "dev:web": "vite --config src/web/vite.config.ts --host 0.0.0.0",
     "build": "vite build --config src/web/vite.config.ts && esbuild src/server/index.ts --bundle --platform=node --target=node22 --format=esm --outfile=dist/server/index.js --packages=external",
+    "build:cloudflare": "vite build --config src/web/vite.config.ts",
+    "deploy": "npm run build:cloudflare && npm run cf:migrate && npx wrangler deploy",
+    "cf:deploy": "npm run deploy",
+    "cf:migrate": "npx wrangler d1 migrations apply DB --remote",
     "start": "node dist/server/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "cloudflare": {
+    "bindings": {
+      "DB": {
+        "description": "D1 database used to store managed mailboxes, synced mail metadata, attachment metadata, and Claw runtime settings."
+      },
+      "ADMIN_PASSWORD": {
+        "description": "Admin password required by every `/api/*` request. Set a strong random value before using the deployed app."
+      }
+    }
   },
   "dependencies": {
     "@clawemail/node-sdk": "^0.2.4",

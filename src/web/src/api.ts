@@ -63,6 +63,10 @@ export type ListenerSnapshot = {
   error?: string | null;
 };
 
+export type RuntimeMode = "node" | "cloudflare" | "unknown";
+
+let runtimeMode: RuntimeMode = "unknown";
+
 let adminPassword = localStorage.getItem("adminPassword") ?? "";
 
 export function getAdminPassword() {
@@ -194,6 +198,14 @@ export async function replyMail(input: ReplyMailInput) {
 
 export function createEventSource(): EventSource {
   return new EventSource(`/api/events?token=${encodeURIComponent(adminPassword)}`);
+}
+
+export function getRuntimeMode(): RuntimeMode {
+  return runtimeMode;
+}
+
+export function setRuntimeMode(value: RuntimeMode) {
+  runtimeMode = value;
 }
 
 export async function fetchClawAuthStatus(): Promise<ClawAuthStatus> {

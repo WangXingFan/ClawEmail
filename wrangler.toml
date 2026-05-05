@@ -1,0 +1,16 @@
+name = "clawemail"
+main = "src/cloudflare/index.ts"
+compatibility_date = "2026-05-05"
+
+[assets]
+directory = "./dist/web"
+binding = "ASSETS"
+run_worker_first = true
+
+[[d1_databases]]
+binding = "DB"
+database_name = "clawemail"
+database_id = "replace-with-cloudflare-d1-database-id"
+
+[vars]
+CLAW_DOMAIN = "claw.163.com"

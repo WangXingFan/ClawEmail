@@ -17,9 +17,11 @@ import {
   fetchMailboxes,
   fetchMails,
   getAdminPassword,
+  getRuntimeMode,
   refreshClawConnection,
   sendClawLoginCode,
   setAdminPassword,
+  setRuntimeMode,
   verifyAdminPassword,
   verifyClawLoginCode,
   type ClawAuthStatus,
@@ -207,11 +209,18 @@ export function App() {
 
   useEffect(() => {
     if (!password) return;
+    if (getRuntimeMode() === "cloudflare") return;
     const events = createEventSource();
     events.addEventListener("mail", () => {
       loadMails().catch(reportError);
     });
+    events.addEventListener("cloudflare-mode", () => {
+      setRuntimeMode("cloudflare");
+      events.close();
+      setStatus(t("flash.events.manualSync"));
+    });
     events.onerror = () => {
+      if (getRuntimeMode() === "cloudflare") return;
       setStatus(t("flash.events.reconnecting"));
     };
     return () => events.close();
